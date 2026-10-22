@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Obstetra Crew · Ladrón de bebés</title>
+<style>
+html,body{margin:0;height:100%;background:#0b0b2a;color:#fff;font-family:"Trebuchet MS",system-ui,sans-serif;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+#hud{position:fixed;top:6px;left:8px;display:flex;gap:12px;align-items:center;font-weight:700;font-size:13px;text-shadow:0 1px 3px #000;pointer-events:none}
+.bar{width:130px;height:12px;background:#fff3;border-radius:9px;overflow:hidden;border:2px solid #fff5}
+.bar i{display:block;height:100%;width:0;background:#35e06f;transition:width .4s}
+#fs{position:fixed;top:4px;right:8px;background:#0008;border:2px solid #fff4;color:#fff;border-radius:10px;font-size:16px;padding:2px 8px;z-index:5}
+#mu{position:fixed;top:4px;right:52px;background:#0008;border:2px solid #fff4;color:#fff;border-radius:10px;font-size:16px;padding:2px 8px;z-index:5}
+#al{position:fixed;top:34px;left:50%;transform:translateX(-50%);background:#d32f2f;padding:6px 16px;border-radius:10px;font-weight:900;display:none;animation:bl .5s infinite;white-space:nowrap;z-index:4}
+@keyframes bl{50%{opacity:.4}}
+#tt{position:fixed;bottom:12%;left:50%;transform:translateX(-50%);background:#000b;padding:6px 14px;border-radius:10px;display:none;font-weight:700;z-index:4;text-align:center}
+#rot{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#e91e8c;padding:6px 12px;border-radius:10px;font-weight:700;display:none;z-index:6;font-size:13px}
+@media (orientation:portrait) and (max-width:700px){#rot{display:block}}
+#zone{position:fixed;left:0;bottom:0;width:48%;height:75%;z-index:3}
+#jb,#jk{position:fixed;border-radius:50%;display:none;pointer-events:none;z-index:3}
+#jb{width:100px;height:100px;border:3px solid #fff6;background:#fff1}
+#jk{width:44px;height:44px;background:#fffa}
+.ab{position:fixed;z-index:3;border-radius:50%;border:3px solid #fff;color:#fff;font:800 11px "Trebuchet MS",sans-serif;width:72px;height:72px;background:#e91e8c;opacity:.4;line-height:1.2}
+.ab.on{opacity:1;box-shadow:0 0 18px #fff9}
+#b3{right:12px;bottom:12px;width:88px;height:88px;background:#d32f2f;font-size:13px}
+#b1{right:112px;bottom:14px;background:#1b9e4b}
+#b2{right:14px;bottom:110px;background:#3b6fd4}
+#ov{position:fixed;inset:0;background:#05051af0;z-index:10;display:none;overflow:auto;padding:14px}
+.box{max-width:620px;margin:0 auto;text-align:center}
+.logo{font-size:2rem;font-weight:900;margin:6px 0;text-shadow:0 3px 0 #e91e8c,0 0 22px #e91e8c}
+.logo small{display:block;font-size:.8rem;letter-spacing:4px;text-shadow:none;color:#9ee7ff}
+.hero{width:90px;margin:4px auto;animation:bob 1.6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px)}}
+svg{display:block;width:100%}
+input{font:inherit;width:100%;max-width:260px;padding:10px;border-radius:12px;border:3px solid #9ee7ff;background:#14143f;color:#fff;text-align:center;font-weight:700}
+.sw,.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.sw b{width:30px;height:30px;border-radius:50%;border:3px solid #fff3;cursor:pointer}
+.sw b.on{border-color:#fff;transform:scale(1.2)}
+.btn{background:#e91e8c;color:#fff;border:0;border-bottom:5px solid #9c0f61;border-radius:14px;padding:11px 20px;font:inherit;font-weight:800;cursor:pointer}
+.btn.g{background:#3b3b7a;border-bottom-color:#22224f}.btn.on{outline:3px solid #fff}
+.mut{color:#cdb8e0;font-size:.85rem}
+.tag{background:#e91e8c33;color:#ffb3dc;padding:3px 10px;border-radius:99px;font-weight:800;font-size:.75rem}
+.opt{display:block;width:100%;text-align:left;background:transparent;color:#fff;border:2px solid #fff4;border-radius:12px;padding:10px 12px;margin:7px 0;font:inherit;cursor:pointer}
+.opt.ok{border-color:#35e06f;background:#35e06f33}.opt.bad{border-color:#ff5252;background:#ff525233}
+.exp{border-left:5px solid #e91e8c;padding:8px 12px;margin:10px 0;background:#ffffff14;text-align:left;border-radius:0 8px 8px 0}
+.big{font-size:2.2rem;font-weight:900;color:#ffd54a}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="hud"></div><button id="mu">🔊</button><button id="fs">⛶</button><div id="al"></div><div id="tt"></div><div id="rot">📱 Gira el celular a horizontal</div>
+<div id="zone"></div><div id="jb"></div><div id="jk"></div>
+<button class="ab" id="b1">USAR<br>[E]</button><button class="ab" id="b2">PREGUNTAR<br>[F]</button><button class="ab" id="b3">ATRAPAR<br>[ESPACIO]</button>
+<div id="ov"><div class="box" id="ovb"></div></div>
+<script>
+const $=id=>document.getElementById(id),rnd=(a,b)=>a+Math.random()*(b-a),shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const COLORS=["#c51111","#132ed1","#117f2d","#ed54ba","#f07d0d","#f6f658","#3f474e","#6b2fbb"],NAMES=["Ruth","Mateo","Ivana","Bruno","Nora","Iván"],EM=["💡","🧼","👶","💉","💊"];
+// ---- Audio (sintetizado, sin archivos) ----
+let AC,mg,mute=0,ms=0;
+function audio(){if(!AC){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;AC=new C();mg=AC.createGain();mg.gain.value=.6;mg.connect(AC.destination);setInterval(music,230)}if(AC.state==="suspended")AC.resume()}
+function tone(f,d,ty,v,t0){if(!AC||mute||!f)return;const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+(t0||0);o.type=ty||"square";o.frequency.value=f;g.gain.setValueAtTime(v||.12,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(mg);o.start(t);o.stop(t+d)}
+const BASS=[55,0,55,0,65,0,49,0,55,0,55,0,73,0,65,0],LUL=[392,0,440,0,523,0,440,0,392,0,330,0,294,0,330,0],HI=[110,110,0,110,131,0,98,98];
+function music(){if(!AC||mute)return;const run=G&&!G.over&&G.N.some(b=>b.car!=null),dk=M&&M.dark,p=run?HI:dk?LUL:BASS,n=p[ms++%p.length];if(n)tone(n,run?.14:.32,run?"sawtooth":dk?"sine":"triangle",run?.07:.1)}
+const SFX={click:()=>tone(660,.06,"square",.08),step:()=>tone(90+Math.random()*30,.05,"square",.03),ok:()=>[523,659,784].forEach((f,i)=>tone(f,.16,"triangle",.18,i*.09)),bad:()=>{tone(200,.25,"sawtooth",.15);tone(140,.3,"sawtooth",.15,.12)},alarm:()=>{for(let i=0;i<6;i++)tone(i%2?620:880,.17,"square",.12,i*.2)},win:()=>[523,659,784,1046,784,1046].forEach((f,i)=>tone(f,.22,"triangle",.2,i*.14)),lose:()=>[392,330,262,196].forEach((f,i)=>tone(f,.35,"sawtooth",.15,i*.22))};
+// ---- Mapas: A=áreas caminables [x,y,w,h,color], S=estaciones (una por tarea), X=salida del ladrón ----
+const MAPS=[
+{n:"🏥 Maternidad",W:1200,H:720,tr:0,P:[600,350],dark:0,
+ A:[[40,40,300,210,"#dbeafe"],[450,40,300,210,"#fee2e2"],[860,40,300,210,"#dcfce7"],[40,250,1120,200,"#cbd5e1"],[40,450,300,210,"#ede9fe"],[450,450,300,210,"#fef9c3"],[860,450,300,210,"#fce7f3"]],
+ S:[[1010,145],[190,145],[1010,555],[600,145],[600,555]],L:["Sala de partos","Pre-quirúrgico","Neonatología","Emergencias","Farmacia"],X:[1120,350,"🚑"]},
+{n:"🌲 Bosque de noche",W:1200,H:720,tr:170,P:[600,360],dark:1,
+ A:[[450,30,300,120,"#5b8a4b"],[570,150,60,110,"#8a6a43"],[480,260,240,200,"#6d9a57"],[570,460,60,110,"#8a6a43"],[450,570,300,120,"#5b8a4b"],[240,330,240,60,"#8a6a43"],[40,230,200,260,"#5b8a4b"],[720,330,240,60,"#8a6a43"],[960,230,200,260,"#5b8a4b"]],
+ S:[[600,80],[110,290],[1050,430],[1050,290],[600,630]],L:["Casa de partos","Carpa de higiene","Rincón del bebé","Puesto de emergencia","Botiquín de hierbas"],X:[70,360,"🕳️"]}];
+const PAIRS=[
+["Indiqué sulfato de magnesio a la paciente con preeclampsia severa.","Indiqué solo reposo a la paciente con preeclampsia severa.","La preeclampsia severa requiere sulfato de magnesio."],
+["Pedí ecografía antes del tacto vaginal en un sangrado indoloro del tercer trimestre.","Hice tacto vaginal inmediato en un sangrado indoloro del tercer trimestre.","Si se sospecha placenta previa, no hay tacto vaginal antes de la ecografía."],
+["Usé McRoberts en una distocia de hombros.","Apliqué Kristeller fuerte en una distocia de hombros.","Kristeller está contraindicado; se usa McRoberts."],
+["Pedí anti-D para una gestante Rh negativo.","Pedí anti-D para una gestante Rh positivo.","El anti-D es solo para gestantes Rh negativo no sensibilizadas."],
+["Calculé la FPP con Naegele: FUR + 7 días − 3 meses.","Calculé la FPP sumando 12 meses a la FUR.","Naegele: FUR + 7 días y − 3 meses."],
+["Ante una atonía inicié masaje uterino y oxitocina.","Ante una atonía indiqué solo líquidos orales.","La atonía requiere masaje uterino y oxitocina."],
+["Recomendé lactancia exclusiva hasta los 6 meses.","Recomendé dejar la lactancia a los 2 meses.","La lactancia exclusiva dura 6 meses."]];
+// ---- Física y rutas ----
+let M,G,GR,GW,GH,cx,sc=1,dpr=1,camx=0,camy=0,jx=0,jy=0,S={name:"",color:COLORS[0],map:0};const K={},CW=20;
+const inA=(x,y)=>M.A.some(a=>x>=a[0]&&x<=a[0]+a[2]&&y>=a[1]&&y<=a[1]+a[3]);
+const ok=(x,y)=>inA(x-8,y-6)&&inA(x+8,y-6)&&inA(x-8,y+6)&&inA(x+8,y+6);
+function loadMap(m){M=m;if(!M.f){M.f=1;const f=1.35,g=v=>Math.round(v*f);M.A=M.A.map(a=>[g(a[0]),g(a[1]),g(a[2]),g(a[3]),a[4]]);M.S=M.S.map(a=>[g(a[0]),g(a[1])]);M.X=[g(M.X[0]),g(M.X[1]),M.X[2]];M.P=[g(M.P[0]),g(M.P[1])];M.W=g(M.W);M.H=g(M.H);M.tr=Math.round(M.tr*1.8)}GW=Math.ceil(M.W/CW);GH=Math.ceil(M.H/CW);GR=new Uint8Array(GW*GH);
+ for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)GR[y*GW+x]=ok(x*CW+10,y*CW+10)?1:0;
+ M.T=[];for(let i=0;i<900&&M.T.length<M.tr;i++){const x=rnd(0,M.W),y=rnd(0,M.H);if(![[0,0],[28,0],[-28,0],[0,28],[0,-28]].some(([a,b])=>inA(x+a,y+b)))M.T.push({x,y,r:rnd(14,24)})}}
+function path(x,y,tx,ty){const g=v=>v/CW|0,s=g(y)*GW+g(x),t=g(ty)*GW+g(tx),prev=new Int32Array(GR.length).fill(-1);
+ if(!GR[t])return[{x:tx,y:ty}];prev[s]=s;const q=[s],D=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+ for(let i=0;i<q.length&&prev[t]<0;i++){const c=q[i],X=c%GW,Y=c/GW|0;for(const[a,b]of D){const nx=X+a,ny=Y+b;if(nx<0||ny<0||nx>=GW||ny>=GH)continue;const n=ny*GW+nx;if(!GR[n]||prev[n]>=0)continue;if(a&&b&&!(GR[Y*GW+nx]&&GR[ny*GW+X]))continue;prev[n]=c;q.push(n)}}
+ if(prev[t]<0)return[{x:tx,y:ty}];const p=[];for(let c=t;c!==s;c=prev[c])p.push({x:(c%GW)*CW+10,y:(c/GW|0)*CW+10});p.reverse();p.push({x:tx,y:ty});return p}
+function rp(s){for(let i=0;i<12;i++){const x=s[0]+rnd(-50,50),y=s[1]+rnd(-30,45);if(ok(x,y))return[x,y]}return[s[0],s[1]+20]}
+function follow(b,dt){b.mv=0;if(!b.p.length)return;const t=b.p[0],dx=t.x-b.x,dy=t.y-b.y,d=Math.hypot(dx,dy),m=(b.sp||75)*dt;
+ if(d<=m+1){b.x=t.x;b.y=t.y;b.p.shift();return}const vx=dx/d*m,vy=dy/d*m;let mv=0;if(ok(b.x+vx,b.y)){b.x+=vx;mv=1}if(ok(b.x,b.y+vy)){b.y+=vy;mv=1}
+ b.mv=mv;if(Math.abs(vx)>.05)b.f=vx<0;b.stk=mv?0:(b.stk||0)+dt;if(b.stk>.8){b.p=[];b.stk=0}}
+function wander(b,dt){if(!b.p.length){b.w-=dt;if(b.w<=0){const[x,y]=rp(M.S[Math.random()*5|0]);b.p=path(b.x,b.y,x,y);b.w=rnd(2,5)}}}
+// ---- IA del ladrón (vida propia) ----
+function ai(b,dt){const P=G.P,dP=Math.hypot(P.x-b.x,P.y-b.y);b.sp=75;
+ if(b.car!=null){b.sp=dP<220?118:102;if(!b.p.length)b.p=path(b.x,b.y,M.X[0],M.X[1]);
+  if(Math.hypot(M.X[0]-b.x,M.X[1]-b.y)<32){G.lost++;banner("😢 El ladrón escapó con el bebé…");b.car=null;b.cd=rnd(18,28);b.p=[];const s=M.S[0];b.x=s[0];b.y=s[1]+30;hud();chk()}return}
+ if(G.sus===b&&dP<170){b.sp=114;b.fl=(b.fl||0)-dt;if(!b.p.length||b.fl<=0){b.fl=1.2;const s=M.S[Math.random()*5|0];b.p=path(b.x,b.y,s[0],s[1]+30)}return}
+ b.cd-=dt;
+ if(b.tg!=null){const c=G.C[b.tg];if(c.sec||!c.baby){b.tg=null;b.p=[];return}
+  if(Math.hypot(c.x-b.x,c.y-b.y)<34){b.p=[];b.wt=(b.wt||0)+dt;
+   if(Math.hypot(P.x-c.x,P.y-c.y)>240&&b.wt>1.2){c.baby=false;b.car=c.i;b.tg=null;b.wt=0;G.ac=c;G.alert=8;banner("🚨 ¡Bebé secuestrado en "+M.L[c.i]+"!")}
+   else if(b.wt>9){b.tg=null;b.wt=0;b.cd=8}}
+  else if(!b.p.length)b.p=path(b.x,b.y,c.x,c.y+14)}
+ else if(b.cd<=0){const o=G.C.filter(c=>!c.sec&&c.baby);if(o.length){const c=o[Math.random()*o.length|0];b.tg=c.i;b.p=path(b.x,b.y,c.x,c.y+14)}else b.cd=5}
+ else wander(b,dt)}
+// ---- Estado del juego ----
+function start(){loadMap(MAPS[S.map]);const cols=shuffle(COLORS.filter(c=>c!==S.color)),im=Math.random()*6|0;
+ G={P:{x:M.P[0],y:M.P[1],c:S.color,n:S.name,mv:0,f:0},lives:3,lost:0,t:0,stun:0,alert:0,pause:0,over:0,mk:{},sus:null,
+ C:M.S.map((s,i)=>({x:s[0]+36,y:s[1]+6,i,sec:false,baby:true})),
+ N:NAMES.map((n,i)=>{const s=M.S[i%5],[x,y]=rp(s);return{n,c:cols[i],x,y,p:[],w:rnd(0,3),mv:0,f:0,imp:i===im,cd:28,tg:null,car:null,ic:0}})};
+ ovHide();hud();resize();toast(M.dark?"🌲 Noche cerrada: repara las luces para ver más lejos":"💡 Apagón: repara las luces de la Sala de partos",5000)}
+function hud(){const d=G.C.filter(c=>c.sec).length;$("hud").innerHTML=`<span>🔒 ${d}/5</span><div class="bar"><i style="width:${d/5*100}%"></i></div><span>${"❤️".repeat(Math.max(0,G.lives))}</span><span>👶❌ ${G.lost}/3</span><span>${M.n}</span>`}
+function toast(t,ms=2200){const e=$("tt");e.textContent=t;e.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display="none",ms)}
+function banner(t){SFX.alarm();const e=$("al");e.textContent=t;e.style.display="block";clearTimeout(banner.h);banner.h=setTimeout(()=>e.style.display="none",5000)}
+function chk(){if(G.lost>=3)end(0,"Se llevaron 3 bebés. La guardia fracasó.");else if(G.lives<=0)end(0,"Demasiados errores pusieron en riesgo a pacientes y bebés.")}
+function upd(dt){const P=G.P;G.t+=dt;if(G.stun>0)G.stun-=dt;
+ let vx=jx+((K.d||K.arrowright)?1:0)-((K.a||K.arrowleft)?1:0),vy=jy+((K.s||K.arrowdown)?1:0)-((K.w||K.arrowup)?1:0);const n=Math.hypot(vx,vy);P.mv=0;
+ if(n>.12&&G.stun<=0){const k=Math.min(1,n)/n*150*dt;vx*=k;vy*=k;if(ok(P.x+vx,P.y)){P.x+=vx;P.mv=1}if(ok(P.x,P.y+vy)){P.y+=vy;P.mv=1}if(Math.abs(vx)>.01)P.f=vx<0}
+ if(P.mv&&G.t%.34<dt)SFX.step();for(const b of G.N){b.imp?ai(b,dt):wander(b,dt);follow(b,dt)}
+ const nr=G.N.map(b=>[b,Math.hypot(b.x-P.x,b.y-P.y)]).sort((a,b)=>a[1]-b[1])[0];
+ G.nb=nr[1]<62?nr[0]:null;G.nc=nr[1]<42?nr[0]:null;G.ns=M.S.findIndex((s,i)=>!G.C[i].sec&&Math.hypot(s[0]-P.x,s[1]-P.y)<46);
+ $("b1").classList.toggle("on",G.ns>=0);$("b2").classList.toggle("on",!!G.nb);$("b3").classList.toggle("on",!!G.nc)}
+// ---- Acciones ----
+function useIt(){if(!G||G.pause||G.over||G.ns<0)return;task(G.ns)}
+function grab(){if(!G||G.pause||G.over||!G.nc)return;const b=G.nc;
+ if(b.imp){if(b.car!=null)G.C[b.car].baby=true;end(1,b.car!=null?"¡Atrapaste al ladrón y rescataste al bebé!":"¡Atrapaste al ladrón antes de que se llevara otro bebé!")}
+ else{G.lives--;G.stun=2.5;SFX.bad();b.p=[];b.w=3;toast("😠 "+b.n+" es inocente. Perdiste una vida y quedas aturdido/a.");hud();chk()}}
+function ask(){if(!G||G.pause||G.over||!G.nb)return;const b=G.nb;if(b.ic>G.t)return toast("Déjalo respirar unos segundos…");
+ const p=PAIRS[Math.random()*PAIRS.length|0];G.pause=1;G.cur={b,p};
+ ov(`<span class="tag">INTERROGATORIO · ${b.n}</span><h3>“${b.imp?p[1]:p[0]}”</h3><p class="mut">¿Es clínicamente correcto lo que dice?</p><div class="row"><button class="btn" onclick="judge(1)">✔ Es correcto</button><button class="btn g" onclick="judge(0)">✖ Es un error</button></div>`)}
+function judge(v){const{b,p}=G.cur,r=!!v===!b.imp;b.ic=G.t+6;r?SFX.ok():SFX.bad();if(r){G.mk[b.n]=b.imp?"🔴":"✅";if(b.imp)G.sus=b}
+ ov(`<h3>${r?(b.imp?"🔴 ¡Sospechoso confirmado! Atrápalo":"✅ Colega confiable"):"🤔 No lo detectaste"}</h3><div class="exp"><b>${b.imp?"Afirmación incorrecta.":"Afirmación correcta."}</b> ${p[2]}</div><button class="btn" onclick="resume()">CONTINUAR</button>`)}
+const MISS=[
+{t:"💡 Reparar las luces",g:"Se fue la luz en pleno trabajo de parto. ¿Cómo se repara? Une cada cable con su mismo color para restablecer la corriente.",k:"w",d:"Luz restablecida: una sala de partos sin buena iluminación no permite valorar sangrado ni suturar con seguridad."},
+{t:"🧼 Lavado quirúrgico de manos",g:"¿Cómo se hace? Toca los pasos en el orden correcto antes de atender un parto.",k:"o",s:["Retirar joyas y mojar manos y antebrazos","Aplicar jabón antiséptico","Frotar manos, uñas y antebrazos 3–5 minutos","Enjuagar de las manos hacia los codos","Secar con compresa estéril"],d:"El lavado ordenado, de las manos hacia los codos, reduce la infección puerperal y neonatal."},
+{t:"👶 Atención del recién nacido",g:"¿Cómo se hace? Toca los pasos en el orden correcto tras el nacimiento.",k:"o",s:["Secar y estimular al bebé","Pinzar el cordón a los 1–3 minutos","Piel con piel con la madre","Aplicar vitamina K","Iniciar la lactancia en la primera hora"],d:"Secar, abrigar (piel con piel) y lactancia precoz son pilares de la atención inmediata."},
+{t:"💉 Preeclampsia severa",g:"Paciente con TA 170/115, cefalea y fosfenos. ¿Cómo la manejas? Resuelve los 2 pasos.",k:"c",q:[["¿Qué administras para prevenir la eclampsia?",["Sulfato de magnesio","Diazepam","Furosemida"],0,"El sulfato de magnesio previene y trata las convulsiones eclámpticas."],["Aparece FR de 10/min y pérdida de reflejos. ¿Cuál es el antídoto?",["Naloxona","Gluconato de calcio","Atropina"],1,"La toxicidad por magnesio se revierte con gluconato de calcio tras suspender la infusión."]],d:"Paciente estabilizada con magnesio y vigilancia de reflejos, FR y diuresis."},
+{t:"💊 Hemorragia posparto",g:"El útero está blando y la paciente sangra mucho. ¿Cómo actúas? Resuelve los 2 pasos.",k:"c",q:[["¿Cuál es la causa más frecuente?",["Atonía uterina","Laceración cervical","Coagulopatía"],0,"La atonía causa cerca del 70 % de las hemorragias posparto."],["¿Qué haces primero?",["Masaje uterino y oxitocina","Histerectomía","Solo observar"],0,"Masaje uterino y oxitocina son la primera línea; luego otros uterotónicos y ácido tranexámico."]],d:"Sangrado controlado con masaje uterino y oxitocina."}];
+let W={};
+function head(i){const m=MISS[i];return `<span class="tag">MISIÓN ${i+1}/5 · ${M.L[i]}</span><h3>${m.t}</h3><div class="exp">📋 <b>Guía:</b> ${m.g}</div>`}
+function task(i){G.pause=1;SFX.click();W={i,n:0,sel:-1,qi:0};const k=MISS[i].k;k==="w"?wires(i):k==="o"?order(i):quiz(i)}
+function wires(i){const C=["#e53935","#1e88e5","#fdd835","#43a047"];W.C=C;W.R=shuffle([0,1,2,3]);
+ ov(head(i)+`<svg viewBox="0 0 300 190" style="max-width:340px;margin:auto;background:#222;border-radius:12px">${C.map((c,k)=>`<circle cx="30" cy="${30+k*45}" r="14" fill="${c}" stroke="#fff" stroke-width="3" onclick="pick(0,${k})"/>`).join("")}${W.R.map((k,j)=>`<circle cx="270" cy="${30+j*45}" r="14" fill="${C[k]}" stroke="#fff" stroke-width="3" onclick="pick(1,${k})"/>`).join("")}<g id="ln" style="pointer-events:none"></g></svg><p class="mut">Toca un cable de la izquierda y luego el del mismo color a la derecha.</p>`)}
+function pick(s,k){SFX.click();if(!s){W.sel=k;return}if(W.sel<0)return;if(W.sel!==k){W.sel=-1;SFX.bad();return}
+ const y1=30+k*45,y2=30+W.R.indexOf(k)*45;$("ln").innerHTML+=`<path d="M30 ${y1}C150 ${y1} 150 ${y2} 270 ${y2}" stroke="${W.C[k]}" stroke-width="7" fill="none"/>`;W.sel=-1;SFX.ok();if(++W.n>=4)setTimeout(()=>complete(W.i),600)}
+function order(i){const m=MISS[i];ov(head(i)+`<div id="ol">${shuffle(m.s.map((x,k)=>({x,k}))).map(a=>`<button class="opt" data-k="${a.k}">${a.x}</button>`).join("")}</div><p class="mut" id="om">Toca el paso 1</p>`);
+ document.querySelectorAll("#ol .opt").forEach(b=>b.onclick=()=>{if(+b.dataset.k===W.n){W.n++;b.disabled=1;b.classList.add("ok");b.textContent=W.n+". "+b.textContent;SFX.click();$("om").textContent=W.n<m.s.length?"Muy bien. Toca el paso "+(W.n+1):"¡Completo!";if(W.n>=m.s.length)setTimeout(()=>complete(W.i),500)}else{SFX.bad();$("om").textContent="❌ Ese paso no va ahora. ¿Cuál sigue?"}})}
+function quiz(i){const m=MISS[i],q=m.q[W.qi];ov(head(i)+`<p><b>Paso ${W.qi+1}/${m.q.length}: ${q[0]}</b></p>${shuffle(q[1].map((x,k)=>({x,k}))).map(a=>`<button class="opt" data-k="${a.k}">${a.x}</button>`).join("")}<div id="fb"></div>`);
+ document.querySelectorAll("#ovb .opt").forEach(b=>b.onclick=()=>{const r=+b.dataset.k===q[2];document.querySelectorAll("#ovb .opt").forEach(x=>{x.disabled=1;if(+x.dataset.k===q[2])x.classList.add("ok");else if(x===b)x.classList.add("bad")});
+  if(r)SFX.ok();else{SFX.bad();G.lives--;hud()}
+  $("fb").innerHTML=`<div class="exp"><b>${r?"✅ Correcto":"❌ Error clínico: pierdes una vida"}</b><br>${q[3]}</div><button class="btn" onclick="nextQ(${r?1:0})">CONTINUAR</button>`})}
+function nextQ(r){if(G.lives<=0)return chk();if(r)W.qi++;if(W.qi>=MISS[W.i].q.length)complete(W.i);else quiz(W.i)}
+function complete(i){G.C[i].sec=true;SFX.ok();hud();ov(head(i)+`<div class="exp"><b>✅ ¡Misión cumplida! Cuna asegurada 🔒</b><br>${MISS[i].d}</div><button class="btn" onclick="after()">CONTINUAR</button>`)}
+function after(){if(G.lives<=0||G.lost>=3)return chk();if(G.C.every(c=>c.sec))return end(1,"¡Completaste las 5 misiones y todos los bebés están a salvo!");resume()}
+function resume(){ovHide();G.pause=0}
+function end(w,m){G.over=1;w?SFX.win():SFX.lose();ov(`<div class="logo" style="color:${w?"#35e06f":"#ff5252"}">${w?"¡VICTORIA!":"DERROTA"}</div><p>${m}</p><div class="big">🔒 ${G.C.filter(c=>c.sec).length}/5 · 👶❌ ${G.lost}</div><div class="row"><button class="btn" onclick="start()">↻ OTRA VEZ</button><button class="btn g" onclick="menu()">MENÚ</button></div>`)}
+// ---- Pantallas ----
+function ov(h){$("ovb").innerHTML=h;$("ov").style.display="block";$("ov").scrollTop=0}function ovHide(){$("ov").style.display="none"}
+function bean(c,d){const k=`rgb(${[1,3,5].map(i=>Math.round(parseInt(c.slice(i,i+2),16)*.72)).join()})`;return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 125" width="100" height="125"><rect x="6" y="52" width="18" height="40" rx="8" fill="${k}"/><rect x="25" y="92" width="20" height="26" rx="8" fill="${k}"/><rect x="55" y="92" width="20" height="26" rx="8" fill="${k}"/><rect x="20" y="12" width="62" height="88" rx="30" fill="${c}"/><ellipse cx="62" cy="42" rx="22" ry="14" fill="#9ee7ff" stroke="#3b6e8a" stroke-width="3"/><ellipse cx="68" cy="37" rx="9" ry="4" fill="#fff" opacity=".7"/>`+(d?`<path d="M20 34Q20 4 51 4Q82 4 82 34Q51 22 20 34Z" fill="#1fb5a8"/><path d="M36 64Q51 100 66 64" stroke="#333" stroke-width="3.5" fill="none"/><circle cx="51" cy="86" r="5" fill="#cfd8dc" stroke="#333" stroke-width="2"/><rect x="26" y="70" width="14" height="14" rx="3" fill="#fff"/><path d="M33 72v10M28 77h10" stroke="#e91e63" stroke-width="3"/>`:"")+`</svg>`}
+const IMG={};function img(c){if(!IMG[c]){const i=new Image();i.src="data:image/svg+xml;utf8,"+encodeURIComponent(bean(c,1));IMG[c]=i}return IMG[c]}
+function menu(){G=null;let c=S.color;
+ ov(`<div class="logo">OBSTETRA CREW<small>EL LADRÓN DE BEBÉS</small></div><div class="hero" id="hero">${bean(c,1)}</div><p class="mut">Un ladrón se hace pasar por personal y roba bebés de sus cunas. Completa las 5 misiones (luces, lavado de manos, recién nacido, preeclampsia y hemorragia) para asegurar cada cuna, interroga a los colegas (el ladrón dice errores clínicos) y atrapa al impostor.</p><input id="nm" maxlength="12" placeholder="Tu nombre" value="${S.name}"><div class="sw" id="sw">${COLORS.map(x=>`<b data-c="${x}" class="${x===c?"on":""}" style="background:${x}"></b>`).join("")}</div><div class="row" id="mp">${MAPS.map((m,i)=>`<button class="btn g ${i===S.map?"on":""}" data-i="${i}">${m.n}</button>`).join("")}</div><button class="btn" id="go">▶ JUGAR</button><p class="mut">PC: WASD/flechas · E usar · F preguntar · ESPACIO atrapar<br>Celular: joystick a la izquierda y botones a la derecha (horizontal)</p>`);
+ document.querySelectorAll("#sw b").forEach(b=>b.onclick=()=>{c=b.dataset.c;document.querySelectorAll("#sw b").forEach(x=>x.classList.remove("on"));b.classList.add("on");$("hero").innerHTML=bean(c,1)});
+ document.querySelectorAll("#mp button").forEach(b=>b.onclick=()=>{S.map=+b.dataset.i;document.querySelectorAll("#mp button").forEach(x=>x.classList.remove("on"));b.classList.add("on")});
+ $("go").onclick=()=>{S.name=$("nm").value.trim()||"Doc";S.color=c;audio();start()}}
+// ---- Render ----
+function drawBean(e,me){const i=img(e.c);if(!i.complete)return;const bob=e.mv?Math.abs(Math.sin(G.t*12))*3:0;
+ cx.fillStyle="#0005";cx.beginPath();cx.ellipse(e.x,e.y+2,13,5,0,0,7);cx.fill();
+ cx.save();cx.translate(e.x,e.y);if(e.f)cx.scale(-1,1);cx.drawImage(i,-17,-42-bob,35,44);cx.restore();
+ cx.textAlign="center";cx.font="bold 10px sans-serif";cx.fillStyle=me?"#ffd54a":"#fff";cx.fillText(e.n,e.x,e.y-48-bob);
+ if(G.mk[e.n])cx.fillText(G.mk[e.n],e.x,e.y-60-bob);if(e.car!=null){cx.font="16px sans-serif";cx.fillText("👶",e.x+(e.f?12:-12),e.y-22)}}
+function draw(){const w=cv.width,h=cv.height;sc=h/460;const vw=w/sc,P=G.P;
+ camx=M.W<=vw?(M.W-vw)/2:Math.max(0,Math.min(M.W-vw,P.x-vw/2));camy=Math.max(0,Math.min(M.H-460,P.y-230));
+ cx.setTransform(1,0,0,1,0,0);cx.fillStyle=M.dark?"#10231a":"#0b0b2a";cx.fillRect(0,0,w,h);cx.setTransform(sc,0,0,sc,-camx*sc,-camy*sc);
+ for(const t of M.T){cx.fillStyle="#0b3d1e";cx.beginPath();cx.arc(t.x,t.y,t.r,0,7);cx.fill();cx.fillStyle="#145c2e";cx.beginPath();cx.arc(t.x-3,t.y-3,t.r*.6,0,7);cx.fill()}
+ for(const a of M.A){cx.fillStyle=a[4];cx.fillRect(a[0],a[1],a[2],a[3]);if(!M.dark){cx.strokeStyle="#334155";cx.lineWidth=5;cx.strokeRect(a[0],a[1],a[2],a[3])}}
+ cx.textAlign="center";cx.font="26px sans-serif";cx.fillText(M.X[2],M.X[0],M.X[1]+9);
+ M.S.forEach((s,i)=>{const c=G.C[i],p=1+Math.sin(G.t*5)*.12;cx.beginPath();cx.arc(s[0],s[1],20*(c.sec?1:p),0,7);cx.fillStyle=c.sec?"#35e06f88":"#ffd54a99";cx.fill();cx.strokeStyle=c.sec?"#1b9e4b":"#e6a100";cx.lineWidth=3;cx.stroke();cx.font="20px sans-serif";cx.fillStyle="#000";cx.fillText(c.sec?"✔":EM[i],s[0],s[1]+7);
+  cx.fillStyle="#8d6e63";cx.fillRect(c.x-14,c.y-9,28,18);cx.font="14px sans-serif";cx.fillStyle="#000";cx.fillText(c.sec?(c.baby?"🔒":"✔"):c.baby?"👶":"❌",c.x,c.y+5);
+  cx.font="bold 9px sans-serif";cx.fillStyle=M.dark?"#fff":"#334155";cx.fillText(M.L[i],s[0],s[1]-26)});
+ [...G.N,P].sort((a,b)=>a.y-b.y).forEach(e=>drawBean(e,e===P));
+ cx.setTransform(1,0,0,1,0,0);
+ if(M.dark||!G.C[0].sec){const f=G.C[0].sec?1.5:1,px=(P.x-camx)*sc,py=(P.y-camy-20)*sc,g=cx.createRadialGradient(px,py,110*f*sc,px,py,(M.dark?330:420)*f*sc);g.addColorStop(0,"#0000");g.addColorStop(1,"#02060ef0");cx.fillStyle=g;cx.fillRect(0,0,w,h)}
+ const mw=170*dpr,ms=mw/M.W,mx=w-mw-8*dpr,my=34*dpr;cx.fillStyle="#000a";cx.fillRect(mx-3,my-3,mw+6,M.H*ms+6);
+ M.A.forEach(a=>{cx.fillStyle="#fff5";cx.fillRect(mx+a[0]*ms,my+a[1]*ms,a[2]*ms,a[3]*ms)});
+ G.C.forEach(c=>{cx.fillStyle=c.sec?"#35e06f":c.baby?"#ffd54a":"#ff3b3b";if(c.baby||c.sec||Math.sin(G.t*8)>0){cx.beginPath();cx.arc(mx+c.x*ms,my+c.y*ms,3.5*dpr,0,7);cx.fill()}});
+ cx.fillStyle="#fff";cx.beginPath();cx.arc(mx+P.x*ms,my+P.y*ms,4*dpr,0,7);cx.fill()}
+function resize(){dpr=Math.min(devicePixelRatio||1,2);cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;cx=cv.getContext("2d")}
+let last=0;function loop(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(G){if(!G.pause&&!G.over)upd(dt);draw()}requestAnimationFrame(loop)}
+// ---- Controles ----
+const cv=$("cv"),z=$("zone");let jo=null;
+z.onpointerdown=e=>{jo={x:e.clientX,y:e.clientY};z.setPointerCapture(e.pointerId);const b=$("jb"),k=$("jk");b.style.cssText=`display:block;left:${jo.x-50}px;top:${jo.y-50}px`;k.style.cssText=`display:block;left:${jo.x-22}px;top:${jo.y-22}px`};
+z.onpointermove=e=>{if(!jo)return;let dx=e.clientX-jo.x,dy=e.clientY-jo.y;const d=Math.hypot(dx,dy);if(d>50){dx*=50/d;dy*=50/d}jx=dx/50;jy=dy/50;$("jk").style.left=jo.x+dx-22+"px";$("jk").style.top=jo.y+dy-22+"px"};
+z.onpointerup=z.onpointercancel=()=>{jo=null;jx=jy=0;$("jb").style.display=$("jk").style.display="none"};
+$("b1").onpointerdown=useIt;$("b2").onpointerdown=ask;$("b3").onpointerdown=grab;
+addEventListener("keydown",e=>{const k=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k))e.preventDefault();K[k]=1;if(k==="e")useIt();if(k==="f")ask();if(k===" ")grab()});
+addEventListener("keyup",e=>K[e.key.toLowerCase()]=0);addEventListener("blur",()=>Object.keys(K).forEach(k=>K[k]=0));
+addEventListener("resize",resize);
+$("fs").onclick=()=>{const d=document.documentElement;if(document.fullscreenElement)document.exitFullscreen();else(d.requestFullscreen?d.requestFullscreen():Promise.reject()).then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock("landscape").catch(()=>{})).catch(()=>toast("Pantalla completa no disponible"))};
+$("mu").onclick=()=>{mute=!mute;$("mu").textContent=mute?"🔇":"🔊"};
+resize();menu();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
